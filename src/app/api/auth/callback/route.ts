@@ -60,6 +60,18 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
     
+    // BUGFIX: Ensure the user exists in the public.users table!
+    // Supabase auth.users doesn't automatically sync to public.users without a trigger.
+    // If public.users is empty, the store_credentials foreign key constraint throws an error!
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('users').upsert({
+        id: user.id,
+        email: user.email || '',
+        full_name: user.user_metadata?.full_name || ''
+      }, { onConflict: 'id' });
+    }
+    
     // Calculate expiration
     const expiresIn = tokenData.expires_in || 7200; // usually 7200 seconds (2 hours)
     const expiresAt = new Date();
