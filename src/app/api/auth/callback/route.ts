@@ -55,6 +55,9 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       console.error('eBay Token Error:', tokenData);
+      throw new Error(tokenData.error_description || 'Failed to exchange token');
+    }
+
     // OAUTH HANDOFF PATTERN:
     // Because cross-site redirects (eBay -> Vercel) drop cookies, we cannot save to the database here
     // because Supabase requires your login cookies to bypass Row Level Security.
