@@ -28,22 +28,10 @@ const navItems: NavItem[] = [
     id: 'nav-dashboard',
   },
   {
-    label: 'SEO Optimizer',
-    href: '/dashboard',
-    icon: <Sparkles size={20} />,
-    id: 'nav-seo',
-  },
-  {
     label: 'Inventory Shield',
     href: '/dashboard/inventory',
     icon: <Shield size={20} />,
     id: 'nav-inventory',
-  },
-  {
-    label: 'Category Mapping',
-    href: '/dashboard/mapping',
-    icon: <Layers size={20} />,
-    id: 'nav-mapping',
   },
 ];
 

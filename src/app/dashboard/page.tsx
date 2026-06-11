@@ -1,30 +1,36 @@
-'use client'
-import { Package, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { Package, CheckCircle, TrendingUp, AlertTriangle, Link as LinkIcon } from 'lucide-react'
+import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import StatsCard from '@/components/dashboard/StatsCard'
-import BeforeAfterCard from '@/components/dashboard/BeforeAfterCard'
-import { AnalyticalCharts } from '@/components/dashboard/AnalyticalCharts'
+import Link from 'next/link'
 
-export default function DashboardHome() {
-  const mockProduct = {
-    id: '1',
-    originalTitle: 'Sony Headphones WH-1000XM5 Black',
-    optimizedTitle: 'Sony WH-1000XM5 Wireless Noise Canceling Headphones - Black',
-    originalDescription: 'Good headphones with noise cancelation.',
-    optimizedDescription: '<h2>Immerse Yourself in Pure Sound</h2><p>Experience industry-leading noise cancellation...</p>',
-    originalCategory: 'Electronics > Audio',
-    mappedCategory: 'Consumer Electronics > Portable Audio & Headphones',
-    itemSpecifics: ['Industry-leading noise cancellation', '30-hour battery life', 'Ultra-comfortable fit'],
-    seoScore: 95,
-    platform: 'shopify' as const
-  }
+export default async function DashboardHome() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch real stats
+  const { count: totalProducts } = await supabase
+    .from('product_listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user?.id || '')
+
+  const { count: optimizedProducts } = await supabase
+    .from('product_listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user?.id || '')
+    .eq('ai_optimized', true)
+
+  const { data: credentials } = await supabase
+    .from('store_credentials')
+    .select('platform')
+    .eq('user_id', user?.id || '')
+    .eq('is_active', true)
+
+  const activeStores = credentials?.length || 0
+  const isEbayConnected = credentials?.some(c => c.platform === 'ebay')
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
-      {/* Drifting Background Orbs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] pointer-events-none animate-drift" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[100px] pointer-events-none animate-drift" style={{ animationDelay: '5s' }} />
-
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
         <div>
@@ -32,43 +38,85 @@ export default function DashboardHome() {
           <p className="text-text-muted mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" className="border-primary/50 hover:bg-primary/10 text-primary">Sync Catalog</Button>
-          <Button variant="primary" className="glow-box">Run SEO Batch</Button>
+          {isEbayConnected && (
+            <Link href="/api/ebay/sync">
+              <Button variant="primary" className="glow-box flex items-center space-x-2">
+                <Package className="w-4 h-4" />
+                <span>Import eBay Listings</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Stats - Organic Panels */}
+      {/* Real Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-        <div className="animate-breathe" style={{ animationDelay: '0s' }}>
-          <StatsCard title="Total Products" value={1248} icon={<Package />} color="blue" change={12} changeType="positive" />
-        </div>
-        <div className="animate-breathe" style={{ animationDelay: '1s' }}>
-          <StatsCard title="Optimized" value={1180} icon={<CheckCircle />} color="green" change={5} changeType="positive" />
-        </div>
-        <div className="animate-breathe" style={{ animationDelay: '2s' }}>
-          <StatsCard title="Avg SEO Score" value={92} icon={<TrendingUp />} color="purple" change={3} changeType="positive" />
-        </div>
-        <div className="animate-breathe" style={{ animationDelay: '3s' }}>
-          <StatsCard title="Active Alerts" value={2} icon={<AlertTriangle />} color="amber" change={-1} changeType="negative" />
-        </div>
+        <Card className="flex flex-col p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-text-muted text-sm uppercase tracking-wider">Total Products</h3>
+            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Package className="w-5 h-5" /></div>
+          </div>
+          <div className="text-3xl font-heading font-bold">{totalProducts || 0}</div>
+        </Card>
+        
+        <Card className="flex flex-col p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-text-muted text-sm uppercase tracking-wider">Optimized</h3>
+            <div className="p-2 bg-green-500/10 text-green-500 rounded-lg"><CheckCircle className="w-5 h-5" /></div>
+          </div>
+          <div className="text-3xl font-heading font-bold">{optimizedProducts || 0}</div>
+        </Card>
+        
+        <Card className="flex flex-col p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-text-muted text-sm uppercase tracking-wider">Active Stores</h3>
+            <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg"><TrendingUp className="w-5 h-5" /></div>
+          </div>
+          <div className="text-3xl font-heading font-bold">{activeStores}</div>
+        </Card>
+        
+        <Card className="flex flex-col p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-text-muted text-sm uppercase tracking-wider">Alerts</h3>
+            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg"><AlertTriangle className="w-5 h-5" /></div>
+          </div>
+          <div className="text-3xl font-heading font-bold">0</div>
+        </Card>
       </div>
 
-      {/* Analytical Charts */}
-      <div className="relative z-10">
-        <AnalyticalCharts />
-      </div>
+      {/* Connection Call to Action */}
+      {!isEbayConnected && (
+        <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed border-border/50">
+          <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-4">
+            <LinkIcon className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">No Stores Connected</h2>
+          <p className="text-text-muted max-w-md mb-6">
+            To start optimizing your listings and syncing inventory, you need to connect your eBay account.
+          </p>
+          <a href="/api/ebay/auth">
+            <Button variant="outline" className="flex items-center space-x-2">
+              <LinkIcon className="w-4 h-4" />
+              <span>Connect eBay Store</span>
+            </Button>
+          </a>
+        </Card>
+      )}
 
-      {/* Recent Optimizations */}
-      <div className="relative z-10">
-        <h2 className="text-xl font-heading font-thin glow-text mb-4">Recent Optimizations</h2>
-        <div className="space-y-6">
-          <BeforeAfterCard 
-            product={mockProduct} 
-            onPushLive={() => console.log('Push live')} 
-            isLoading={false}
-          />
-        </div>
-      </div>
+      {isEbayConnected && totalProducts === 0 && (
+        <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed border-success/30">
+          <div className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mb-4">
+            <Package className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">eBay Connected!</h2>
+          <p className="text-text-muted max-w-md mb-6">
+            Your store is connected but you haven't imported any listings yet.
+          </p>
+          <Link href="/api/ebay/sync">
+            <Button variant="primary">Import Listings Now</Button>
+          </Link>
+        </Card>
+      )}
     </div>
   )
 }
