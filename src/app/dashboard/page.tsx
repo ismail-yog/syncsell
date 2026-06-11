@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { ArrowRight, RefreshCw, ShoppingCart, TrendingUp, Sparkles } from 'lucide-react';
