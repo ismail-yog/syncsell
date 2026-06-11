@@ -5,11 +5,17 @@ import { ArrowRight, RefreshCw, ShoppingCart, TrendingUp, Sparkles } from 'lucid
 import SyncButton from '@/components/dashboard/SyncButton';
 import OptimizeButton from '@/components/dashboard/OptimizeButton';
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;
+
+  const errorParam = searchParams.error as string;
 
   // Fetch Store Credentials
   const { data: store } = await supabase
@@ -35,6 +41,13 @@ export default async function DashboardPage() {
   if (!store) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        {errorParam && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl mb-8 max-w-xl w-full text-left">
+            <h3 className="font-bold mb-1 flex items-center"><span className="mr-2">⚠️</span> Authentication Error</h3>
+            <p className="text-sm font-mono break-all">{errorParam}</p>
+            <p className="text-xs mt-2 opacity-80">This means your environment variables or Supabase database might not be configured correctly. Please share this exact error with your developer.</p>
+          </div>
+        )}
         <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <ShoppingCart className="w-10 h-10 text-primary" />
         </div>
