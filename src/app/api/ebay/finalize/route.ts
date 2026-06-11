@@ -38,6 +38,14 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
 
+    // BUGFIX: Ensure the user exists in public.users to satisfy the foreign key constraint!
+    // Since Supabase Auth doesn't auto-sync to public.users, we must do it manually.
+    await supabase.from('users').upsert({
+      id: user.id,
+      email: user.email || '',
+      full_name: user.user_metadata?.full_name || 'eBay User'
+    }, { onConflict: 'id' });
+
     // Save or update the store credentials in Supabase
     const { error: dbError } = await supabase
       .from('store_credentials')
