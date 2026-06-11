@@ -46,14 +46,8 @@ export async function GET() {
       throw new Error(storeError.message);
     }
 
-    return new NextResponse(
-      '<html><body style="font-family: sans-serif; text-align: center; padding: 50px; background: #f0fdf4;">' +
-      '<h1 style="color: #166534; font-size: 3rem;">SUCCESS!</h1>' +
-      '<p style="font-size: 1.5rem;">Your real eBay token has been manually securely injected into the database.</p>' +
-      '<a href="/dashboard" style="display: inline-block; margin-top: 20px; padding: 15px 30px; background: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Go to Dashboard</a>' +
-      '</body></html>',
-      { status: 200, headers: { 'Content-Type': 'text/html' } }
-    );
+    // Completely seamless redirect back to dashboard
+    return NextResponse.redirect(new URL('/dashboard?success=ebay_connected', request.nextUrl.origin));
 
   } catch (err: any) {
     console.error('Manual Inject Error:', err);
