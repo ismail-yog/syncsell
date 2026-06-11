@@ -68,20 +68,7 @@ export default async function DashboardPage({
     );
   }
 
-  if (totalListings === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-20 h-20 bg-secondary/10 rounded-full flex items-center justify-center mb-6">
-          <RefreshCw className="w-10 h-10 text-secondary" />
-        </div>
-        <h1 className="text-4xl font-bold mb-4">eBay Connected!</h1>
-        <p className="text-muted-foreground text-lg max-w-xl mb-8">
-          Your store is securely linked. Click below to synchronize your active listings into the dashboard so we can begin optimization.
-        </p>
-        <SyncButton />
-      </div>
-    );
-  }
+  // We removed the empty state wall so the full dashboard renders immediately even with 0 listings
 
   return (
     <div className="space-y-8">
