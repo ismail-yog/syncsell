@@ -14,7 +14,7 @@ export async function POST() {
     // 1. Fetch the user's encrypted eBay token
     const { data: storeCreds, error: credError } = await supabase
       .from('store_credentials')
-      .select('id, access_token')
+      .select('id, encrypted_access_token')
       .eq('user_id', user.id)
       .eq('platform', 'ebay')
       .single();
@@ -24,7 +24,7 @@ export async function POST() {
     }
 
     // 2. Decrypt the access token
-    const accessToken = decrypt(storeCreds.access_token);
+    const accessToken = decrypt(storeCreds.encrypted_access_token);
 
     // 3. Call eBay's Inventory API (Trading API or Inventory API, here using Inventory API)
     // For standard eBay sellers, the Sell Inventory API requires opting into eBay Inventory model.

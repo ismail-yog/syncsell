@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
         platform: 'ebay',
         store_url: 'ebay.com', // eBay doesn't provide a specific store URL on standard auth
         store_name: 'My eBay Store',
-        access_token: encrypt(tokenData.access_token),
-        refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
+        encrypted_access_token: encrypt(tokenData.access_token),
+        encrypted_refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
         token_expires_at: expiresAt.toISOString(),
         is_active: true
       }, {

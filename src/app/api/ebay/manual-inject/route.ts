@@ -34,7 +34,7 @@ export async function GET() {
       platform: 'ebay',
       store_url: 'ebay.com',
       store_name: 'My Actual eBay Store',
-      access_token: encrypt(rawToken),
+      encrypted_access_token: encrypt(rawToken),
       token_expires_at: expiresAt.toISOString(),
       is_active: true
     }, { onConflict: 'user_id, platform' });
