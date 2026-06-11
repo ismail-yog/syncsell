@@ -20,11 +20,33 @@ export async function GET() {
     return NextResponse.redirect(new URL('/login?error=not_authenticated', process.env.NEXT_PUBLIC_APP_URL || 'https://syncsell-gmmk.vercel.app'));
   }
 
-  // Define the required scopes for EcomAutoPilot (Matching user's allowed scopes)
+  // Define the required scopes for EcomAutoPilot (Matching user's enterprise allowed scopes)
   const scopes = [
     'https://api.ebay.com/oauth/api_scope',
-    'https://api.ebay.com/oauth/api_scope/sell.inventory',
+    'https://api.ebay.com/oauth/api_scope/sell.marketing.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.marketing',
     'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.inventory',
+    'https://api.ebay.com/oauth/api_scope/sell.account.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.account',
+    'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
+    'https://api.ebay.com/oauth/api_scope/sell.analytics.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.finances',
+    'https://api.ebay.com/oauth/api_scope/sell.payment.dispute',
+    'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.reputation',
+    'https://api.ebay.com/oauth/api_scope/sell.reputation.readonly',
+    'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription',
+    'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly',
+    'https://api.ebay.com/oauth/api_scope/sell.stores',
+    'https://api.ebay.com/oauth/api_scope/sell.stores.readonly',
+    'https://api.ebay.com/oauth/scope/sell.edelivery',
+    'https://api.ebay.com/oauth/api_scope/commerce.vero',
+    'https://api.ebay.com/oauth/api_scope/sell.inventory.mapping',
+    'https://api.ebay.com/oauth/api_scope/commerce.message',
+    'https://api.ebay.com/oauth/api_scope/commerce.feedback',
+    'https://api.ebay.com/oauth/api_scope/commerce.shipping'
   ].join(' ');
 
   // Construct the eBay Authorization URL
