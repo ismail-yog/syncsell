@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
 const PUBLIC_PREFIXES = [
   '/api/webhooks/',
   '/api/auth/callback',
+  '/api/ebay/auth',
 ];
 
 /**

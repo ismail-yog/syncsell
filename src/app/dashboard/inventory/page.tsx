@@ -51,12 +51,12 @@ export default async function InventoryPage() {
                 <span className="text-sm">Ready to Sync</span>
               </>
             ) : (
-              <Link href="/api/ebay/auth">
+              <a href="/api/ebay/auth">
                 <Button variant="outline" className="flex items-center space-x-2">
                   <LinkIcon className="w-4 h-4" />
                   <span>Connect eBay</span>
                 </Button>
-              </Link>
+              </a>
             )}
           </div>
         </Card>
