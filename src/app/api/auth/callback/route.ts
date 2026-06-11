@@ -3,6 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 
 export async function GET(request: NextRequest) {
+  // 1. Log everything eBay is sending back
+  console.log('--- EBAY CALLBACK HIT ---');
+  console.log('Query Params:', request.nextUrl.searchParams.toString());
+  console.log('Cookies:', request.cookies.getAll());
+
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');
@@ -11,33 +16,45 @@ export async function GET(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://syncsell-gmmk.vercel.app';
 
-  if (error) {
-    console.error('eBay Auth Error:', error, errorDescription);
-    return NextResponse.redirect(new URL(`/dashboard?error=${encodeURIComponent(errorDescription || 'eBay Auth Failed')}`, appUrl));
-  }
-
-  if (!code || !state || !state.startsWith('ebay_auth:')) {
-    return NextResponse.redirect(new URL('/dashboard?error=Missing+Auth+Parameters', appUrl));
-  }
-
-  const userId = state.split(':')[1];
-  
-  if (!userId) {
-    return NextResponse.redirect(new URL('/dashboard?error=Invalid+State+Parameter', appUrl));
-  }
-
   try {
+    if (error) {
+      console.error('eBay Auth Error:', error, errorDescription);
+      throw new Error(`eBay returned error: ${error} - ${errorDescription}`);
+    }
+
+    // 2. Make sure it explicitly tells us WHICH parameter is missing
+    if (!code && !state) {
+      throw new Error('Both authorization code and state are missing from eBay redirect.');
+    }
+    if (!code) {
+      throw new Error('Authorization code is missing from eBay redirect.');
+    }
+    if (!state) {
+      throw new Error('State parameter is missing from eBay redirect.');
+    }
+
+    // 3. State Validation
+    if (!state.startsWith('ebay_auth:')) {
+      throw new Error(`Invalid state parameter format received from eBay: ${state}`);
+    }
+
+    const userId = state.split(':')[1];
+    if (!userId) {
+      throw new Error('Could not extract User ID from state parameter.');
+    }
+
     const clientId = process.env.EBAY_APP_ID;
     const clientSecret = process.env.EBAY_CERT_ID;
     const redirectUri = process.env.EBAY_REDIRECT_URI;
 
     if (!clientId || !clientSecret || !redirectUri) {
-      throw new Error('Missing eBay API credentials');
+      throw new Error('Missing eBay API credentials in Vercel environment variables.');
     }
 
     const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-    // Exchange the authorization code for an access token
+    // 4. Token Exchange Request
+    console.log('Attempting eBay Token Exchange...');
     const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
       method: 'POST',
       headers: {
@@ -54,17 +71,12 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error('eBay Token Error:', tokenData);
-      throw new Error(tokenData.error_description || 'Failed to exchange token');
+      console.error('eBay Token Exchange Failed:', tokenData);
+      throw new Error(tokenData.error_description || tokenData.error || 'Failed to exchange token with eBay API.');
     }
 
-    // OAUTH HANDOFF PATTERN:
-    // Because cross-site redirects (eBay -> Vercel) drop cookies, we cannot save to the database here
-    // because Supabase requires your login cookies to bypass Row Level Security.
-    // Instead, we encrypt the eBay token, save it in a secure SameSite=Lax cookie on our own domain,
-    // and redirect you back to the Dashboard. 
-    // The Dashboard will then read the cookie and save it to the database with your full login session!
-    
+    console.log('Token Exchange Successful!');
+
     const handoffData = {
       userId: userId,
       tokenData: tokenData
@@ -72,7 +84,6 @@ export async function GET(request: NextRequest) {
     
     const response = NextResponse.redirect(new URL('/dashboard?finalize_ebay=true', appUrl));
     
-    // Set a temporary cookie that expires in 5 minutes
     response.cookies.set('ebay_oauth_handoff', encrypt(JSON.stringify(handoffData)), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -84,7 +95,11 @@ export async function GET(request: NextRequest) {
     return response;
 
   } catch (err: any) {
-    console.error('OAuth Callback Exception:', err);
-    return NextResponse.redirect(new URL(`/dashboard?error=${encodeURIComponent(err.message || 'Unknown Error')}`, appUrl));
+    // 5. Wrap everything in try/catch and log the full error
+    console.error('--- OAUTH CALLBACK EXCEPTION ---');
+    console.error(err);
+    
+    // Redirect with the exact, explicit error message so you can see it on the dashboard
+    return NextResponse.redirect(new URL(`/dashboard?error=${encodeURIComponent(err.message || 'Unknown Callback Error')}`, appUrl));
   }
 }
