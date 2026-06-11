@@ -88,11 +88,16 @@ export async function GET(request: NextRequest) {
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
 
     // Bypass any missing ON CONFLICT constraints by using safe inserts and deletes
-    await supabaseAdmin.from('users').insert({
+    // Supabase builder doesn't have a .catch() method, so we just destructure the error and ignore it
+    const { error: userInsertError } = await supabaseAdmin.from('users').insert({
       id: userId,
-      email: 'ebay_oauth_user@syncsell.com', // Placeholder since we only have the ID here
+      email: 'ebay_oauth_user@syncsell.com',
       full_name: 'eBay Authenticated User'
-    }).catch(() => {}); // Ignore duplicate errors
+    });
+
+    if (userInsertError) {
+      console.log('Ignored user insert error (likely already exists):', userInsertError.message);
+    }
 
     // Clear old credentials
     await supabaseAdmin.from('store_credentials').delete().match({ user_id: userId, platform: 'ebay' });
