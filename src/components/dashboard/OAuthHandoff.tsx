@@ -15,15 +15,14 @@ export default function OAuthHandoff() {
         
         if (res.ok) {
           setStatus('Successfully connected!');
-          router.replace('/dashboard?success=ebay_connected');
-          router.refresh();
+          window.location.href = '/dashboard?success=ebay_connected';
         } else {
           setStatus('Error: ' + data.error);
-          router.replace('/dashboard?error=' + encodeURIComponent(data.error));
+          window.location.href = '/dashboard?error=' + encodeURIComponent(data.error);
         }
       } catch (err: any) {
         setStatus('Error finalizing connection.');
-        router.replace('/dashboard?error=' + encodeURIComponent(err.message));
+        window.location.href = '/dashboard?error=' + encodeURIComponent(err.message);
       }
     };
     
