@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
   const clientId = process.env.EBAY_APP_ID;
@@ -9,6 +10,14 @@ export async function GET() {
       { error: 'Missing eBay OAuth configuration' },
       { status: 500 }
     );
+  }
+
+  // Get current user to pass in state (bypasses cross-site cookie drops on callback)
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.redirect(new URL('/login?error=not_authenticated', process.env.NEXT_PUBLIC_APP_URL || 'https://syncsell-gmmk.vercel.app'));
   }
 
   // Define the required scopes for EcomAutoPilot
@@ -24,7 +33,7 @@ export async function GET() {
   authUrl.searchParams.append('client_id', clientId);
   authUrl.searchParams.append('redirect_uri', redirectUri);
   authUrl.searchParams.append('response_type', 'code');
-  authUrl.searchParams.append('state', 'ebay_auth');
+  authUrl.searchParams.append('state', `ebay_auth:${user.id}`);
   authUrl.searchParams.append('prompt', 'login');
   authUrl.searchParams.append('scope', scopes);
 

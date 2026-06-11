@@ -24,12 +24,10 @@ export async function GET(request: Request) {
     const supabase = await createClient();
 
     // Handle eBay OAuth Callback
-    if (state === 'ebay_auth') {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    if (state && state.startsWith('ebay_auth:')) {
+      const userId = state.split(':')[1];
 
-      if (!user) {
+      if (!userId) {
         return NextResponse.redirect(`${origin}/login?error=not_authenticated`);
       }
 
@@ -81,7 +79,7 @@ export async function GET(request: Request) {
       // Save to Supabase store_credentials
       const { error: dbError } = await supabase.from('store_credentials').upsert(
         {
-          user_id: user.id,
+          user_id: userId,
           platform: 'ebay',
           store_url: 'ebay.com', // Generic URL for eBay
           store_name: 'eBay Store', // Could be fetched from User profile API
