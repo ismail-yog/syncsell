@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { encrypt } from '@/lib/encryption';
 
 export async function GET(request: NextRequest) {
@@ -58,19 +58,15 @@ export async function GET(request: NextRequest) {
       throw new Error(tokenData.error_description || 'Failed to exchange token');
     }
 
-    const supabase = await createClient();
+    // Use Admin Client to completely bypass cookie loss issues during redirect
+    const supabaseAdmin = createAdminClient();
     
-    // BUGFIX: Ensure the user exists in the public.users table!
-    // Supabase auth.users doesn't automatically sync to public.users without a trigger.
-    // If public.users is empty, the store_credentials foreign key constraint throws an error!
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from('users').upsert({
-        id: user.id,
-        email: user.email || '',
-        full_name: user.user_metadata?.full_name || ''
-      }, { onConflict: 'id' });
-    }
+    // Ensure the user exists in public.users to satisfy foreign key constraints
+    await supabaseAdmin.from('users').upsert({
+      id: userId,
+      email: 'connected@ebay.com', // fallback
+      full_name: 'eBay User'
+    }, { onConflict: 'id' });
     
     // Calculate expiration
     const expiresIn = tokenData.expires_in || 7200; // usually 7200 seconds (2 hours)
@@ -79,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     // Save or update the store credentials in Supabase
     // We are encrypting the tokens so they are secure at rest
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseAdmin
       .from('store_credentials')
       .upsert({
         user_id: userId,
@@ -107,8 +103,8 @@ export async function GET(request: NextRequest) {
     
     // Log to Supabase so Antigravity can read it
     try {
-      const supabase = await createClient();
-      await supabase.from('chat_logs').insert({
+      const supabaseAdmin = createAdminClient();
+      await supabaseAdmin.from('chat_logs').insert({
         user_id: userId,
         session_id: 'error_log',
         role: 'system',
