@@ -6,7 +6,7 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 // ─────────────────────────────────────────────────────────────
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy_key_to_bypass_build_error',
 });
 
 const EMBEDDING_MODEL = 'text-embedding-3-small';
