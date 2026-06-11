@@ -66,7 +66,7 @@ export default async function DashboardPage({
           Link your eBay account to instantly import your products and let Claude 3.5 Sonnet rewrite them for maximum SEO visibility.
         </p>
         <a 
-          href="/api/ebay/manual-inject"
+          href="/api/ebay/auth"
           className="px-8 py-4 rounded-xl bg-primary text-white font-semibold text-lg hover:scale-[1.02] transition-all glow-primary flex items-center space-x-2"
         >
           <span>Connect eBay Account</span>
