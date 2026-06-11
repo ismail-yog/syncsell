@@ -28,14 +28,11 @@ export async function GET() {
   ].join(' ');
 
   // Construct the eBay Authorization URL
-  const { data: { session } } = await supabase.auth.getSession();
-  const jwt = session?.access_token || '';
-
   const authUrl = new URL('https://auth.ebay.com/oauth2/authorize');
   authUrl.searchParams.append('client_id', clientId);
   authUrl.searchParams.append('redirect_uri', redirectUri);
   authUrl.searchParams.append('response_type', 'code');
-  authUrl.searchParams.append('state', `ebay_auth:${user.id}:${jwt}`);
+  authUrl.searchParams.append('state', `ebay_auth:${user.id}`);
   authUrl.searchParams.append('prompt', 'login');
   authUrl.searchParams.append('scope', scopes);
 

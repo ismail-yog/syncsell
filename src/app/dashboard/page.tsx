@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, RefreshCw, ShoppingCart, TrendingUp, Sparkles } from 'lucide-react';
 import SyncButton from '@/components/dashboard/SyncButton';
 import OptimizeButton from '@/components/dashboard/OptimizeButton';
+import OAuthHandoff from '@/components/dashboard/OAuthHandoff';
 
 export default async function DashboardPage({
   searchParams,
@@ -16,6 +17,15 @@ export default async function DashboardPage({
   if (!user) return null;
 
   const errorParam = searchParams.error as string;
+  const isFinalizing = searchParams.finalize_ebay === 'true';
+
+  if (isFinalizing) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <OAuthHandoff />
+      </div>
+    );
+  }
 
   // Fetch Store Credentials
   const { data: store } = await supabase

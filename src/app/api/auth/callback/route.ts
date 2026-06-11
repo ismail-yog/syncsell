@@ -55,79 +55,33 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       console.error('eBay Token Error:', tokenData);
-      throw new Error(tokenData.error_description || 'Failed to exchange token');
-    }
-
-    const stateParts = state.split(':');
-    const jwtToken = stateParts.length > 2 ? stateParts[2] : '';
-
-    // Create an explicitly authenticated client using the passed JWT!
-    // This completely bypasses all cross-site cookie dropping issues.
-    const { createClient } = require('@supabase/supabase-js');
-    const supabaseUser = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
-      {
-        global: {
-          headers: { Authorization: `Bearer ${jwtToken}` }
-        }
-      }
-    );
+    // OAUTH HANDOFF PATTERN:
+    // Because cross-site redirects (eBay -> Vercel) drop cookies, we cannot save to the database here
+    // because Supabase requires your login cookies to bypass Row Level Security.
+    // Instead, we encrypt the eBay token, save it in a secure SameSite=Lax cookie on our own domain,
+    // and redirect you back to the Dashboard. 
+    // The Dashboard will then read the cookie and save it to the database with your full login session!
     
-    // Ensure the user exists in public.users to satisfy foreign key constraints
-    await supabaseUser.from('users').upsert({
-      id: userId,
-      email: 'connected@ebay.com', // fallback
-      full_name: 'eBay User'
-    }, { onConflict: 'id' });
+    const handoffData = {
+      userId: userId,
+      tokenData: tokenData
+    };
     
-    // Calculate expiration
-    const expiresIn = tokenData.expires_in || 7200; // usually 7200 seconds (2 hours)
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
-
-    // Save or update the store credentials in Supabase
-    // We are encrypting the tokens so they are secure at rest
-    const { error: dbError } = await supabaseUser
-      .from('store_credentials')
-      .upsert({
-        user_id: userId,
-        platform: 'ebay',
-        store_url: 'ebay.com', // eBay doesn't provide a specific store URL on standard auth
-        store_name: 'My eBay Store',
-        access_token: encrypt(tokenData.access_token),
-        refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
-        token_expires_at: expiresAt.toISOString(),
-        is_active: true
-      }, {
-        onConflict: 'user_id, platform'
-      });
-
-    if (dbError) {
-      console.error('Database Error:', dbError);
-      throw new Error('Failed to save store credentials');
-    }
-
-    // Successfully connected! Redirect back to dashboard
-    return NextResponse.redirect(new URL('/dashboard?success=ebay_connected', appUrl));
+    const response = NextResponse.redirect(new URL('/dashboard?finalize_ebay=true', appUrl));
+    
+    // Set a temporary cookie that expires in 5 minutes
+    response.cookies.set('ebay_oauth_handoff', encrypt(JSON.stringify(handoffData)), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 300,
+      path: '/'
+    });
+    
+    return response;
 
   } catch (err: any) {
     console.error('OAuth Callback Exception:', err);
-    
-    // Log to Supabase so Antigravity can read it
-    try {
-      const supabaseAdmin = createAdminClient();
-      await supabaseAdmin.from('chat_logs').insert({
-        user_id: userId,
-        session_id: 'error_log',
-        role: 'system',
-        message: 'OAUTH_ERROR',
-        metadata: { error: err.message, stack: err.stack }
-      });
-    } catch (dbLogErr) {
-      // Ignore
-    }
-
     return NextResponse.redirect(new URL(`/dashboard?error=${encodeURIComponent(err.message || 'Unknown Error')}`, appUrl));
   }
 }
