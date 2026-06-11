@@ -20,12 +20,11 @@ export async function GET() {
     return NextResponse.redirect(new URL('/login?error=not_authenticated', process.env.NEXT_PUBLIC_APP_URL || 'https://syncsell-gmmk.vercel.app'));
   }
 
-  // Define the required scopes for EcomAutoPilot
+  // Define the required scopes for EcomAutoPilot (Matching user's allowed scopes)
   const scopes = [
     'https://api.ebay.com/oauth/api_scope',
     'https://api.ebay.com/oauth/api_scope/sell.inventory',
     'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
-    'https://api.ebay.com/oauth/api_scope/sell.item',
   ].join(' ');
 
   // Construct the eBay Authorization URL
