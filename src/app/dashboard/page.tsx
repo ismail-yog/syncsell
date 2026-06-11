@@ -17,15 +17,7 @@ export default async function DashboardPage({
   if (!user) return null;
 
   const errorParam = searchParams.error as string;
-  const isFinalizing = searchParams.finalize_ebay === 'true';
-
-  if (isFinalizing) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <OAuthHandoff />
-      </div>
-    );
-  }
+  // No more handoff needed!
 
   // Fetch Store Credentials
   const { data: store } = await supabase

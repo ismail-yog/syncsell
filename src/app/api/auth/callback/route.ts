@@ -77,22 +77,49 @@ export async function GET(request: NextRequest) {
 
     console.log('Token Exchange Successful!');
 
-    const handoffData = {
-      userId: userId,
-      tokenData: tokenData
-    };
+    // Enterprise Architecture: Write token directly to the database via Service Role to completely bypass browser cookie issues
+    console.log('Writing credentials directly to database via Admin Client...');
     
-    const response = NextResponse.redirect(new URL('/dashboard?finalize_ebay=true', appUrl));
+    const supabaseAdmin = createAdminClient();
     
-    response.cookies.set('ebay_oauth_handoff', encrypt(JSON.stringify(handoffData)), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 300,
-      path: '/'
-    });
+    // Calculate expiration
+    const expiresIn = tokenData.expires_in || 7200;
+    const expiresAt = new Date();
+    expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
+
+    // Bypass any missing ON CONFLICT constraints by using safe inserts and deletes
+    await supabaseAdmin.from('users').insert({
+      id: userId,
+      email: 'ebay_oauth_user@syncsell.com', // Placeholder since we only have the ID here
+      full_name: 'eBay Authenticated User'
+    }).catch(() => {}); // Ignore duplicate errors
+
+    // Clear old credentials
+    await supabaseAdmin.from('store_credentials').delete().match({ user_id: userId, platform: 'ebay' });
+
+    // Save new credentials
+    const { error: dbError } = await supabaseAdmin
+      .from('store_credentials')
+      .insert({
+        user_id: userId,
+        platform: 'ebay',
+        store_url: 'ebay.com',
+        store_name: 'My eBay Store',
+        encrypted_access_token: encrypt(tokenData.access_token),
+        encrypted_refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
+        token_expires_at: expiresAt.toISOString(),
+        is_active: true
+      });
+
+    if (dbError) {
+      console.error('Admin Database Error:', dbError);
+      throw new Error('Failed to save store credentials to database: ' + dbError.message);
+    }
+
+    console.log('Credentials saved successfully! Redirecting to Dashboard.');
     
-    return response;
+    // Completely bypass the frontend handoff and go straight to success
+    return NextResponse.redirect(new URL('/dashboard?success=ebay_connected', appUrl));
 
   } catch (err: any) {
     // 5. Wrap everything in try/catch and log the full error
