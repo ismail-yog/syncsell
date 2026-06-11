@@ -28,8 +28,11 @@ export async function GET() {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 2);
 
-    // Encrypt and inject the real token into store_credentials
-    const { error: storeError } = await supabase.from('store_credentials').upsert({
+    // Bypass missing UNIQUE constraints by deleting the old credential first
+    await supabase.from('store_credentials').delete().match({ user_id: user.id, platform: 'ebay' });
+
+    // Encrypt and inject the real token into store_credentials using simple insert
+    const { error: storeError } = await supabase.from('store_credentials').insert({
       user_id: user.id,
       platform: 'ebay',
       store_url: 'ebay.com',
@@ -37,7 +40,7 @@ export async function GET() {
       encrypted_access_token: encrypt(rawToken),
       token_expires_at: expiresAt.toISOString(),
       is_active: true
-    }, { onConflict: 'user_id, platform' });
+    });
 
     if (storeError) {
       throw new Error(storeError.message);
