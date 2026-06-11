@@ -58,11 +58,24 @@ export async function GET(request: NextRequest) {
       throw new Error(tokenData.error_description || 'Failed to exchange token');
     }
 
-    // Use Admin Client to completely bypass cookie loss issues during redirect
-    const supabaseAdmin = createAdminClient();
+    const stateParts = state.split(':');
+    const jwtToken = stateParts.length > 2 ? stateParts[2] : '';
+
+    // Create an explicitly authenticated client using the passed JWT!
+    // This completely bypasses all cross-site cookie dropping issues.
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseUser = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
+      {
+        global: {
+          headers: { Authorization: `Bearer ${jwtToken}` }
+        }
+      }
+    );
     
     // Ensure the user exists in public.users to satisfy foreign key constraints
-    await supabaseAdmin.from('users').upsert({
+    await supabaseUser.from('users').upsert({
       id: userId,
       email: 'connected@ebay.com', // fallback
       full_name: 'eBay User'
@@ -75,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     // Save or update the store credentials in Supabase
     // We are encrypting the tokens so they are secure at rest
-    const { error: dbError } = await supabaseAdmin
+    const { error: dbError } = await supabaseUser
       .from('store_credentials')
       .upsert({
         user_id: userId,
