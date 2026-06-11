@@ -1,0 +1,248 @@
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════
+   EcomAutoPilot v2.0 — Deep Space / Cinematic Design System
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Deep Space & Corporate Colors ── */
+  --color-primary: #00B4D8; /* Ice Blue */
+  --color-primary-hover: #0096C7;
+  --color-accent: #0077B6; /* Teal */
+  --color-accent-hover: #023E8A;
+  --color-success: #10B981; /* Retain for analytical positive */
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  /* ── Surfaces (Deep Space Defaults) ── */
+  --color-bg: #03040B; /* Deep Space Black/Blue */
+  --color-surface: rgba(10, 17, 40, 0.7); /* Translucent dark blue */
+  --color-surface-alt: rgba(20, 30, 60, 0.5); /* Lighter translucent */
+  --color-border: rgba(0, 180, 216, 0.2); /* Faint ice blue border */
+  --color-text: #FFFFFF; /* Crisp White */
+  --color-text-muted: #94A3B8;
+
+  /* ── Shadows (Glowing) ── */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 25px rgba(0, 180, 216, 0.5);
+
+  /* ── Radii ── */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* ── Fonts (Cinematic) ── */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Animations ── */
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-up: slide-up 0.5s ease-out;
+  --animate-slide-down: slide-down 0.4s ease-out;
+  --animate-scale-in: scale-in 0.3s ease-out;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+  --animate-gradient-shift: gradient-shift 8s ease infinite;
+  --animate-breathe: breathe 8s ease-in-out infinite;
+  --animate-drift: drift 15s linear infinite;
+}
+
+/* ── Dark Mode Overrides (Same as defaults now to force dark mode vibe) ── */
+.dark {
+  --color-bg: #03040B;
+  --color-surface: rgba(10, 17, 40, 0.7);
+  --color-surface-alt: rgba(20, 30, 60, 0.5);
+  --color-border: rgba(0, 180, 216, 0.2);
+  --color-text: #FFFFFF;
+  --color-text-muted: #94A3B8;
+}
+
+/* ═══ Keyframes ═══ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-15px) rotate(1deg); }
+  66% { transform: translateY(8px) rotate(-1deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 180, 216, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(0, 180, 216, 0.6); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(2%, 2%); }
+  50% { transform: translate(0, 4%); }
+  75% { transform: translate(-2%, 2%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ═══ Glowing & Glass Utilities ═══ */
+.glow-text {
+  text-shadow: 0 0 12px rgba(0, 180, 216, 0.8);
+}
+
+.glow-box {
+  box-shadow: var(--shadow-glow);
+}
+
+.glass {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+/* ═══ Gradient Text Utility ═══ */
+.gradient-text {
+  background: linear-gradient(135deg, #FFFFFF, #00B4D8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, #00B4D8, #0077B6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ═══ Custom Scrollbar ═══ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 180, 216, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 180, 216, 0.6);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 180, 216, 0.3) transparent;
+}
+
+/* ═══ Theme Transition ═══ */
+*,
+*::before,
+*::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+}
+
+/* ═══ Focus Ring ═══ */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══ Selection ═══ */
+::selection {
+  background: rgba(0, 180, 216, 0.4);
+  color: #FFFFFF;
+}
+
+/* ═══ Body Defaults ═══ */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color-scheme: dark; /* Force dark scrollbars/inputs natively */
+}
+
+/* ═══ Gradient Borders ═══ */
+.gradient-border {
+  position: relative;
+  border-radius: var(--radius-lg);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #00B4D8, #0077B6);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ═══ Shimmer Loading ═══ */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-alt) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
