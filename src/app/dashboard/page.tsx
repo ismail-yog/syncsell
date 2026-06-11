@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, RefreshCw, ShoppingCart, TrendingUp, Sparkles } from 'lucide-react';
 import SyncButton from '@/components/dashboard/SyncButton';
 import OptimizeButton from '@/components/dashboard/OptimizeButton';
+import DemoConnectButton from '@/components/dashboard/DemoConnectButton';
 import OAuthHandoff from '@/components/dashboard/OAuthHandoff';
 
 export default async function DashboardPage({
@@ -65,13 +66,7 @@ export default async function DashboardPage({
         <p className="text-muted-foreground text-lg max-w-xl mb-8">
           Link your eBay account to instantly import your products and let Claude 3.5 Sonnet rewrite them for maximum SEO visibility.
         </p>
-        <a 
-          href="/api/ebay/auth"
-          className="px-8 py-4 rounded-xl bg-primary text-white font-semibold text-lg hover:scale-[1.02] transition-all glow-primary flex items-center space-x-2"
-        >
-          <span>Connect eBay Account</span>
-          <ArrowRight className="w-5 h-5" />
-        </a>
+        <DemoConnectButton />
       </div>
     );
   }
