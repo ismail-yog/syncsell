@@ -92,6 +92,21 @@ export async function GET(request: NextRequest) {
 
   } catch (err: any) {
     console.error('OAuth Callback Exception:', err);
+    
+    // Log to Supabase so Antigravity can read it
+    try {
+      const supabase = await createClient();
+      await supabase.from('chat_logs').insert({
+        user_id: userId,
+        session_id: 'error_log',
+        role: 'system',
+        message: 'OAUTH_ERROR',
+        metadata: { error: err.message, stack: err.stack }
+      });
+    } catch (dbLogErr) {
+      // Ignore
+    }
+
     return NextResponse.redirect(new URL(`/dashboard?error=${encodeURIComponent(err.message || 'Unknown Error')}`, appUrl));
   }
 }
