@@ -28,10 +28,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           
           <nav className="flex-1 px-4 space-y-2 mt-4">
             <NavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" />} label="Command Center" active />
-            <NavItem href="#" icon={<PackageSearch className="w-5 h-5" />} label="Inventory" />
-            <NavItem href="#" icon={<Sparkles className="w-5 h-5" />} label="AI Settings" />
-            <NavItem href="#" icon={<Receipt className="w-5 h-5" />} label="Billing" />
-            <NavItem href="#" icon={<Settings className="w-5 h-5" />} label="Integrations" />
           </nav>
           
           <div className="p-4 border-t border-white/10">
