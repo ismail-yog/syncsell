@@ -26,70 +26,62 @@ export async function POST() {
     // 2. Decrypt the access token
     const accessToken = decrypt(storeCreds.encrypted_access_token);
 
-    // 3. Call eBay's Inventory API
-    let items = [];
-    
-    try {
-      const ebayResponse = await fetch('https://api.ebay.com/sell/inventory/v1/inventory_item?limit=100', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!ebayResponse.ok) {
-        throw new Error('eBay Inventory API requires opt-in or returned an error.');
+    // 3. Frictionless Pipeline Step 1: Get eBay Username via Identity API
+    const identityResponse = await fetch('https://api.ebay.com/commerce/identity/v1/user/', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
+    });
 
-      const inventoryData = await ebayResponse.json();
-      items = inventoryData.inventoryItems || [];
-    } catch (apiErr) {
-      console.warn('Falling back to Demo Listings because of eBay API constraint:', apiErr);
-      
-      // Inject Premium Demo Listings so the user can test the AI features instantly
-      items = [
-        {
-          sku: 'DEMO-1001',
-          product: {
-            title: 'sony wh-1000xm4 headphones black used',
-            description: 'great condition used sony headphones black color comes with case no charger',
-            imageUrls: ['https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&w=400&q=80']
-          }
-        },
-        {
-          sku: 'DEMO-1002',
-          product: {
-            title: 'vintage leather jacket mens large',
-            description: 'old leather jacket brown color size L men slightly worn on sleeves but looks cool',
-            imageUrls: ['https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&q=80']
-          }
-        },
-        {
-          sku: 'DEMO-1003',
-          product: {
-            title: 'coffee maker machine drip',
-            description: 'standard drip coffee maker works fine black plastic',
-            imageUrls: ['https://images.unsplash.com/photo-1520970014086-2208d157c9e2?auto=format&fit=crop&w=400&q=80']
-          }
-        }
-      ];
+    if (!identityResponse.ok) {
+      const errData = await identityResponse.text();
+      console.error("Identity API Error:", errData);
+      throw new Error('Failed to fetch eBay user identity.');
     }
+
+    const identityData = await identityResponse.json();
+    const username = identityData.username;
+
+    if (!username) {
+      throw new Error('Could not resolve eBay username from token.');
+    }
+
+    // 4. Frictionless Pipeline Step 2: Fetch Active Public Listings via Browse API
+    // Search the public marketplace for items sold by this exact username
+    const browseResponse = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=*&filter=sellers:{${username}}&limit=100`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!browseResponse.ok) {
+      const errData = await browseResponse.text();
+      console.error("Browse API Error:", errData);
+      throw new Error('Failed to fetch public listings from Browse API.');
+    }
+
+    const browseData = await browseResponse.json();
+    const items = browseData.itemSummaries || [];
 
     if (items.length === 0) {
-      return NextResponse.json({ message: 'Sync complete. No listings found on eBay.', count: 0 });
+      return NextResponse.json({ message: 'Sync complete. No active listings found on eBay for this account.', count: 0 });
     }
 
-    // 4. Map and save listings to our database
+    // 5. Map and save real listings to our database
     const listingsToInsert = items.map((item: any) => ({
       user_id: user.id,
       store_credential_id: storeCreds.id,
-      external_product_id: item.sku || item.groupIds?.[0] || 'unknown_sku_' + Math.random().toString(36).substring(7),
-      original_title: item.product?.title || 'Untitled Product',
-      original_description: item.product?.description || '',
-      original_specifics: item.product?.aspects || {},
-      image_url: item.product?.imageUrls?.[0] || null,
+      external_product_id: item.itemId,
+      original_title: item.title || 'Untitled Product',
+      original_description: item.shortDescription || 'No description available',
+      original_specifics: {}, // Browse API doesn't return full item specifics in summary, which is fine for title SEO
+      image_url: item.image?.imageUrl || null,
       seo_score: Math.floor(Math.random() * 20) + 30, // Random bad score to encourage optimization
       optimization_status: 'pending'
     }));
@@ -104,10 +96,10 @@ export async function POST() {
       return NextResponse.json({ error: 'Failed to save listings to database' }, { status: 500 });
     }
 
-    return NextResponse.json({ message: `Successfully synced ${items.length} listings.`, count: items.length });
+    return NextResponse.json({ message: `Successfully synced ${items.length} live listings.`, count: items.length });
 
   } catch (error: any) {
-    console.error('Sync Endpoint Exception:', error);
+    console.error('Frictionless Sync Exception:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

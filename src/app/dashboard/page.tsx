@@ -5,7 +5,7 @@ import { ArrowRight, RefreshCw, ShoppingCart, TrendingUp, Sparkles } from 'lucid
 import SyncButton from '@/components/dashboard/SyncButton';
 import OptimizeButton from '@/components/dashboard/OptimizeButton';
 import OAuthHandoff from '@/components/dashboard/OAuthHandoff';
-
+import PushToEbayButton from '@/components/dashboard/PushToEbayButton';
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -194,9 +194,17 @@ export default async function DashboardPage({
                     </div>
                   </td>
                   <td className="py-4 align-top text-right">
-                    <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors">
-                      Edit
-                    </button>
+                    {listing.optimization_status === 'optimized' ? (
+                      <PushToEbayButton 
+                        listingId={listing.external_product_id} 
+                        title={listing.optimized_title} 
+                        description={listing.optimized_description} 
+                      />
+                    ) : (
+                      <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors">
+                        View
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
