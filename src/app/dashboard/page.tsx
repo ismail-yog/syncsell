@@ -6,6 +6,7 @@ import SyncButton from '@/components/dashboard/SyncButton';
 import OptimizeButton from '@/components/dashboard/OptimizeButton';
 import OAuthHandoff from '@/components/dashboard/OAuthHandoff';
 import PushToEbayButton from '@/components/dashboard/PushToEbayButton';
+import RefreshDashboardButton from '@/components/dashboard/RefreshDashboardButton';
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -74,15 +75,15 @@ export default async function DashboardPage({
     <div className="grid grid-cols-12 gap-6 h-full auto-rows-min">
       
       {/* Top Stats Row (Bento Grid) */}
-      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-all duration-500"></div>
+      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group hover:bg-white/10 hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] transition-all duration-500 hover:-translate-y-1">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/40 transition-all duration-500"></div>
         <p className="text-sm font-semibold text-slate-400 mb-1">Total Products</p>
         <h3 className="text-4xl font-black text-white">{totalListings}</h3>
         <p className="text-xs text-slate-500 mt-2 flex items-center"><span className="text-emerald-400 mr-1">↑ 12%</span> from last week</p>
       </div>
 
-      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl group-hover:bg-secondary/30 transition-all duration-500"></div>
+      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group hover:bg-white/10 hover:shadow-[0_0_40px_rgba(6,182,212,0.3)] transition-all duration-500 hover:-translate-y-1">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl group-hover:bg-secondary/40 transition-all duration-500"></div>
         <p className="text-sm font-semibold text-slate-400 mb-1">Optimized</p>
         <h3 className="text-4xl font-black text-white">{optimizedListings}</h3>
         <div className="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
@@ -90,22 +91,20 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl group-hover:bg-accent/30 transition-all duration-500"></div>
+      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group hover:bg-white/10 hover:shadow-[0_0_40px_rgba(192,38,211,0.3)] transition-all duration-500 hover:-translate-y-1">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl group-hover:bg-accent/40 transition-all duration-500"></div>
         <p className="text-sm font-semibold text-slate-400 mb-1">Avg SEO Score</p>
         <h3 className="text-4xl font-black text-white">{Math.round(avgSeoScore)}<span className="text-lg text-slate-500">/100</span></h3>
         <p className="text-xs text-slate-500 mt-2 flex items-center"><span className="text-emerald-400 mr-1">↑ 8 pts</span> after optimization</p>
       </div>
       
-      <div className="col-span-12 lg:col-span-3 bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/30 rounded-3xl p-6 flex flex-col justify-between items-start shadow-[0_0_30px_rgba(139,92,246,0.15)] relative overflow-hidden">
+      <div className="col-span-12 lg:col-span-3 bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/30 rounded-3xl p-6 flex flex-col justify-between items-start shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:shadow-[0_0_50px_rgba(139,92,246,0.4)] relative overflow-hidden transition-all duration-500 hover:-translate-y-1">
         <div className="relative z-10 w-full flex justify-between items-start">
           <div>
             <p className="text-sm font-semibold text-white/80 mb-1">AI Engine</p>
             <h3 className="text-2xl font-bold text-white mb-2">Ready</h3>
           </div>
-          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-            <RefreshCw className="w-5 h-5 text-white animate-pulse" />
-          </div>
+          <RefreshDashboardButton />
         </div>
         <div className="relative z-10 w-full mt-4">
           {totalListings - optimizedListings > 0 ? (
