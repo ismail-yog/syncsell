@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Syne } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const syne = Syne({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: "SyncSell | AI eBay Optimization",
-  description: "Flawless 1-click eBay listing optimization powered by Claude 3.5 Sonnet.",
+  title: "SyncSell | Premium AI E-commerce Optimization",
+  description: "Enterprise-grade eBay and Shopify listing optimization powered by Claude 3.5 Sonnet.",
 };
 
 export default function RootLayout({
@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className="dark">
+      <body className={`${syne.className} bg-background text-foreground antialiased selection:bg-primary/30`}>{children}</body>
     </html>
   );
 }

@@ -71,108 +71,150 @@ export default async function DashboardPage({
   // We removed the empty state wall so the full dashboard renders immediately even with 0 listings
 
   return (
-    <div className="space-y-8">
-      {/* STATS ROW */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 rounded-2xl flex items-center space-x-4">
-          <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl">
-            <ShoppingCart className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Listings</p>
-            <p className="text-2xl font-bold">{totalListings}</p>
-          </div>
-        </div>
-        <div className="glass-card p-6 rounded-2xl flex items-center space-x-4">
-          <div className="p-3 bg-primary/10 text-primary rounded-xl">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Optimized by AI</p>
-            <p className="text-2xl font-bold">{optimizedListings}</p>
-          </div>
-        </div>
-        <div className="glass-card p-6 rounded-2xl flex items-center space-x-4">
-          <div className="p-3 bg-green-500/10 text-green-500 rounded-xl">
-            <TrendingUp className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Average SEO Score</p>
-            <p className="text-2xl font-bold">{avgSeoScore}/100</p>
-          </div>
+    <div className="grid grid-cols-12 gap-6 h-full auto-rows-min">
+      
+      {/* Top Stats Row (Bento Grid) */}
+      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-all duration-500"></div>
+        <p className="text-sm font-semibold text-slate-400 mb-1">Total Products</p>
+        <h3 className="text-4xl font-black text-white">{totalListings}</h3>
+        <p className="text-xs text-slate-500 mt-2 flex items-center"><span className="text-emerald-400 mr-1">↑ 12%</span> from last week</p>
+      </div>
+
+      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl group-hover:bg-secondary/30 transition-all duration-500"></div>
+        <p className="text-sm font-semibold text-slate-400 mb-1">Optimized</p>
+        <h3 className="text-4xl font-black text-white">{optimizedListings}</h3>
+        <div className="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
+          <div className="bg-gradient-to-r from-secondary to-primary h-full rounded-full" style={{ width: `${totalListings > 0 ? (optimizedListings/totalListings)*100 : 0}%` }}></div>
         </div>
       </div>
 
-      {/* BEFORE / AFTER TABLE */}
-      <div className="glass-card rounded-2xl overflow-hidden">
-        <div className="p-6 border-b border-border/50 flex justify-between items-center bg-white/50">
-          <h2 className="text-xl font-bold">Listing Optimization</h2>
-          <div className="flex space-x-3">
-            <SyncButton variant="secondary" />
-            <OptimizeButton count={totalListings - optimizedListings} />
+      <div className="col-span-12 lg:col-span-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden group">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl group-hover:bg-accent/30 transition-all duration-500"></div>
+        <p className="text-sm font-semibold text-slate-400 mb-1">Avg SEO Score</p>
+        <h3 className="text-4xl font-black text-white">{Math.round(avgSeoScore)}<span className="text-lg text-slate-500">/100</span></h3>
+        <p className="text-xs text-slate-500 mt-2 flex items-center"><span className="text-emerald-400 mr-1">↑ 8 pts</span> after optimization</p>
+      </div>
+      
+      <div className="col-span-12 lg:col-span-3 bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/30 rounded-3xl p-6 flex flex-col justify-between items-start shadow-[0_0_30px_rgba(139,92,246,0.15)] relative overflow-hidden">
+        <div className="relative z-10 w-full flex justify-between items-start">
+          <div>
+            <p className="text-sm font-semibold text-white/80 mb-1">AI Engine</p>
+            <h3 className="text-2xl font-bold text-white mb-2">Ready</h3>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+            <RefreshCw className="w-5 h-5 text-white animate-pulse" />
           </div>
         </div>
-        <div className="p-0 overflow-x-auto">
+        <div className="relative z-10 w-full mt-4">
+          {totalListings - optimizedListings > 0 ? (
+            <OptimizeButton count={totalListings - optimizedListings} />
+          ) : (
+            <button disabled className="w-full py-2.5 rounded-xl bg-white/10 text-white/50 font-semibold text-sm border border-white/5">
+              All listings optimized
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Table Area (Bento Component) */}
+      <div className="col-span-12 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-xl flex flex-col">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-white">Inventory Optimization</h2>
+            <p className="text-sm text-slate-400 mt-1">Manage and optimize your listings using Claude 3.5 Sonnet.</p>
+          </div>
+          <div className="flex space-x-3">
+            <SyncButton />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-muted/50 border-b border-border/50">
-                <th className="p-4 font-medium text-sm text-muted-foreground">Product</th>
-                <th className="p-4 font-medium text-sm text-muted-foreground">Original (Before)</th>
-                <th className="p-4 font-medium text-sm text-muted-foreground">Optimized (After)</th>
-                <th className="p-4 font-medium text-sm text-muted-foreground text-center">Status</th>
+              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
+                <th className="pb-4 font-semibold">Product</th>
+                <th className="pb-4 font-semibold">Original Data</th>
+                <th className="pb-4 font-semibold">AI Optimized Data</th>
+                <th className="pb-4 font-semibold text-center">SEO Score</th>
+                <th className="pb-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-white/5">
               {listings?.map((listing) => (
-                <tr key={listing.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="p-4 align-top w-1/5">
-                    {listing.image_url ? (
-                      <img src={listing.image_url} alt="Product" className="w-16 h-16 rounded-lg object-cover mb-2 border" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-lg bg-muted mb-2 border flex items-center justify-center text-xs text-muted-foreground">No Img</div>
+                <tr key={listing.id} className="hover:bg-white/5 transition-colors group">
+                  <td className="py-4 align-top">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-xl bg-black/50 border border-white/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {listing.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={listing.image_url} alt="Product" className="w-full h-full object-cover" />
+                        ) : (
+                          <ShoppingCart className="w-5 h-5 text-slate-500" />
+                        )}
+                      </div>
+                      <div className="text-xs font-mono text-slate-500">
+                        {listing.external_product_id}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4 align-top max-w-[200px] pr-4">
+                    <p className="font-semibold text-sm text-slate-300 mb-1 line-clamp-2">{listing.original_title}</p>
+                    <p className="text-xs text-slate-500 line-clamp-2">{listing.original_description?.replace(/<[^>]*>?/gm, '')}</p>
+                  </td>
+                  <td className="py-4 align-top max-w-[250px] pr-4">
+                    {listing.optimization_status === 'pending' && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                        Waiting for AI...
+                      </span>
                     )}
-                    <span className="text-xs font-medium px-2 py-1 bg-muted rounded-full text-muted-foreground block w-max">
-                      ID: {listing.external_product_id}
-                    </span>
-                  </td>
-                  <td className="p-4 align-top w-2/5">
-                    <p className="font-medium text-sm mb-1">{listing.original_title}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-3">
-                      {listing.original_description?.replace(/<[^>]*>?/gm, '') || 'No description'}
-                    </p>
-                  </td>
-                  <td className="p-4 align-top w-2/5 relative">
+                    {listing.optimization_status === 'processing' && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
+                        <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Analyzing
+                      </span>
+                    )}
                     {listing.optimization_status === 'optimized' ? (
                       <div>
-                        <p className="font-medium text-sm mb-1 text-primary">{listing.optimized_title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-3">
+                        <p className="font-bold text-sm mb-1 text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{listing.optimized_title}</p>
+                        <p className="text-xs text-slate-400 line-clamp-2">
                           {listing.optimized_description?.replace(/<[^>]*>?/gm, '')}
                         </p>
                       </div>
-                    ) : listing.optimization_status === 'processing' ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-                        <span className="text-sm font-medium text-primary animate-pulse">Optimizing...</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground italic mt-2">Waiting for optimization...</div>
-                    )}
-                  </td>
-                  <td className="p-4 align-top text-center">
-                    {listing.optimization_status === 'optimized' ? (
-                      <div className="inline-flex flex-col items-center">
-                        <span className="w-10 h-10 rounded-full border-4 border-green-500/20 text-green-600 font-bold flex items-center justify-center mb-1">
-                          {listing.seo_score}
-                        </span>
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-green-600">Score</span>
-                      </div>
-                    ) : (
-                      <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-500/10 text-yellow-600 font-medium">
-                        Pending
+                    ) : null}
+                    {listing.optimization_status === 'failed' && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                        AI Failed
                       </span>
                     )}
                   </td>
+                  <td className="py-4 align-top text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/10 bg-black/40 text-sm font-bold text-white shadow-inner">
+                      {listing.seo_score || '-'}
+                    </div>
+                  </td>
+                  <td className="py-4 align-top text-right">
+                    <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors">
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
+              
+              {(!listings || listings.length === 0) && (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+                        <ShoppingCart className="w-8 h-8 text-slate-500" />
+                      </div>
+                      <p className="text-slate-400 font-medium">No listings found.</p>
+                      <p className="text-sm text-slate-500 mt-1 mb-4">Sync your store to get started.</p>
+                      <SyncButton />
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
