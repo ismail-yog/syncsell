@@ -38,6 +38,12 @@ function LoginForm() {
 
   return (
     <>
+      {errParam && errParam !== 'not_authenticated' && (
+        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-xl mb-6 text-center break-words">
+          <span className="font-bold">Error:</span> {errParam}
+        </div>
+      )}
+
       {errParam === 'not_authenticated' && (
         <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-xl mb-6 text-center">
           Please log in to continue.
