@@ -35,28 +35,9 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      setSuccess(true)
-      setLoading(false)
+      // Seamless Onboarding: Instantly redirect to eBay OAuth instead of dashboard
+      window.location.href = '/api/ebay/auth'
     }
-  }
-
-  if (success) {
-    return (
-      <div className="glass-card rounded-2xl p-8 w-full text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h2 className="text-2xl font-bold mb-2">Check your email</h2>
-        <p className="text-muted-foreground mb-6">
-          We&apos;ve sent a verification link to <strong>{email}</strong>.
-        </p>
-        <Link href="/login" className="text-primary hover:underline font-medium">
-          Return to login
-        </Link>
-      </div>
-    )
   }
 
   return (

@@ -3,8 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { AuroraBackground } from '@/components/ui/AuroraBackground';
-import { LayoutDashboard, PackageSearch, Sparkles, Settings, LogOut, Receipt } from 'lucide-react';
+import { LayoutDashboard, PackageSearch, Sparkles, Settings, Receipt } from 'lucide-react';
 import MagneticElement from '@/components/ui/MagneticElement';
+import SignOutButton from '@/components/dashboard/SignOutButton';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
@@ -38,9 +39,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               <div className="flex-1 overflow-hidden text-xs text-slate-300 font-medium truncate">
                 {user.email}
               </div>
-              <button className="text-slate-500 hover:text-white transition-colors">
-                <LogOut className="w-4 h-4" />
-              </button>
+              <SignOutButton />
             </div>
           </div>
         </aside>
