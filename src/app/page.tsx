@@ -36,13 +36,13 @@ export default function Home() {
           </p>
 
           <MagneticElement strength={20}>
-            <Link 
+            <a 
               href="/api/ebay/auth" 
               className="inline-flex items-center px-10 py-5 rounded-full bg-primary text-white font-bold text-xl hover:scale-105 transition-all shadow-[0_0_40px_rgba(139,92,246,0.4)] hover:shadow-[0_0_60px_rgba(139,92,246,0.6)]"
             >
               <span>Connect eBay to Start</span>
               <ArrowRight className="w-6 h-6 ml-2" />
-            </Link>
+            </a>
           </MagneticElement>
           <p className="text-sm text-slate-500 mt-4">Secure, read/write OAuth connection. No credit card required.</p>
         </div>
