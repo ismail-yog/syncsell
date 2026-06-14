@@ -52,24 +52,24 @@ function LoginForm() {
 
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
+          <label className="block text-sm font-medium mb-1 text-slate-200">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            className="w-full p-3 rounded-xl border bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder-slate-400"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
+          <label className="block text-sm font-medium mb-1 text-slate-200">Password</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            className="w-full p-3 rounded-xl border bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder-slate-400"
             placeholder="••••••••"
           />
         </div>
