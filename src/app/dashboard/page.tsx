@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ArrowRight, RefreshCw, ShoppingCart, TrendingUp, Sparkles } from 'lucide-react';
 import SyncButton from '@/components/dashboard/SyncButton';
 import OptimizeButton from '@/components/dashboard/OptimizeButton';
-import OAuthHandoff from '@/components/dashboard/OAuthHandoff';
 import PushToEbayButton from '@/components/dashboard/PushToEbayButton';
 import RefreshDashboardButton from '@/components/dashboard/RefreshDashboardButton';
 export default async function DashboardPage({
