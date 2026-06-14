@@ -37,8 +37,7 @@ export async function GET() {
     'https://api.ebay.com/oauth/api_scope/sell.inventory.mapping',
     'https://api.ebay.com/oauth/api_scope/commerce.message',
     'https://api.ebay.com/oauth/api_scope/commerce.feedback',
-    'https://api.ebay.com/oauth/api_scope/commerce.shipping',
-    'https://api.ebay.com/oauth/api_scope/commerce.identity.email.readonly' // Crucial for getting email
+    'https://api.ebay.com/oauth/api_scope/commerce.shipping'
   ].join(' ');
 
   // 1. Generate a secure random password for the shadow account
