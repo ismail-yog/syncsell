@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
   const clientId = process.env.EBAY_APP_ID;
@@ -10,14 +9,6 @@ export async function GET() {
       { error: 'Missing eBay OAuth configuration' },
       { status: 500 }
     );
-  }
-
-  // Get current user to pass in state (bypasses cross-site cookie drops on callback)
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.redirect(new URL('/login?error=not_authenticated', process.env.NEXT_PUBLIC_APP_URL || 'https://syncsell-gmmk.vercel.app'));
   }
 
   // Define the required scopes for EcomAutoPilot (Matching user's enterprise allowed scopes)
@@ -46,18 +37,41 @@ export async function GET() {
     'https://api.ebay.com/oauth/api_scope/sell.inventory.mapping',
     'https://api.ebay.com/oauth/api_scope/commerce.message',
     'https://api.ebay.com/oauth/api_scope/commerce.feedback',
-    'https://api.ebay.com/oauth/api_scope/commerce.shipping'
+    'https://api.ebay.com/oauth/api_scope/commerce.shipping',
+    'https://api.ebay.com/oauth/api_scope/commerce.identity.email.readonly' // Crucial for getting email
   ].join(' ');
+
+  // 1. Generate a secure random password for the shadow account
+  const tempPass = crypto.randomUUID() + 'Aa1!';
+  
+  // 2. Generate a secure state token for CSRF protection
+  const stateToken = crypto.randomUUID();
 
   // Construct the eBay Authorization URL
   const authUrl = new URL('https://auth.ebay.com/oauth2/authorize');
   authUrl.searchParams.append('client_id', clientId);
   authUrl.searchParams.append('redirect_uri', redirectUri);
   authUrl.searchParams.append('response_type', 'code');
-  authUrl.searchParams.append('state', `ebay_auth:${user.id}`);
+  authUrl.searchParams.append('state', `shadow_auth:${stateToken}`);
   authUrl.searchParams.append('prompt', 'login');
   authUrl.searchParams.append('scope', scopes);
 
-  // Redirect the user to eBay
-  return NextResponse.redirect(authUrl.toString());
+  // 3. Redirect and set secure cookies to remember the shadow pass and CSRF state
+  const response = NextResponse.redirect(authUrl.toString());
+  
+  response.cookies.set('syncsell_shadow_pass', tempPass, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 3600 // 1 hour
+  });
+
+  response.cookies.set('syncsell_auth_state', stateToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 3600 // 1 hour
+  });
+
+  return response;
 }

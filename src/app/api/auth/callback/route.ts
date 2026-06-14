@@ -1,46 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
 
 export async function GET(request: NextRequest) {
-  // 1. Log everything eBay is sending back
-  console.log('--- EBAY CALLBACK HIT ---');
-  console.log('Query Params:', request.nextUrl.searchParams.toString());
-  console.log('Cookies:', request.cookies.getAll());
+  console.log('--- EBAY SHADOW CALLBACK HIT ---');
 
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://syncsell-gmmk.vercel.app';
 
   try {
     if (error) {
-      console.error('eBay Auth Error:', error, errorDescription);
-      throw new Error(`eBay returned error: ${error} - ${errorDescription}`);
+      throw new Error(`eBay returned error: ${error}`);
+    }
+    if (!code || !state) {
+      throw new Error('Missing code or state from eBay redirect.');
     }
 
-    // 2. Make sure it explicitly tells us WHICH parameter is missing
-    if (!code && !state) {
-      throw new Error('Both authorization code and state are missing from eBay redirect.');
-    }
-    if (!code) {
-      throw new Error('Authorization code is missing from eBay redirect.');
-    }
-    if (!state) {
-      throw new Error('State parameter is missing from eBay redirect.');
+    // 1. Verify CSRF State
+    const cookieState = request.cookies.get('syncsell_auth_state')?.value;
+    if (!cookieState || state !== `shadow_auth:${cookieState}`) {
+      throw new Error('State parameter mismatch. Possible CSRF attack or expired session.');
     }
 
-    // 3. State Validation
-    if (!state.startsWith('ebay_auth:')) {
-      throw new Error(`Invalid state parameter format received from eBay: ${state}`);
-    }
-
-    const userId = state.split(':')[1];
-    if (!userId) {
-      throw new Error('Could not extract User ID from state parameter.');
+    // 2. Retrieve the Shadow Password
+    const shadowPass = request.cookies.get('syncsell_shadow_pass')?.value;
+    if (!shadowPass) {
+      throw new Error('Missing shadow password. Session expired.');
     }
 
     const clientId = process.env.EBAY_APP_ID;
@@ -48,13 +38,13 @@ export async function GET(request: NextRequest) {
     const redirectUri = process.env.EBAY_REDIRECT_URI;
 
     if (!clientId || !clientSecret || !redirectUri) {
-      throw new Error('Missing eBay API credentials in Vercel environment variables.');
+      throw new Error('Missing eBay API credentials.');
     }
 
     const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-    // 4. Token Exchange Request
-    console.log('Attempting eBay Token Exchange...');
+    // 3. Exchange Token
+    console.log('Exchanging eBay code for token...');
     const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
       method: 'POST',
       headers: {
@@ -69,69 +59,119 @@ export async function GET(request: NextRequest) {
     });
 
     const tokenData = await tokenResponse.json();
-
     if (!tokenResponse.ok) {
-      console.error('eBay Token Exchange Failed:', tokenData);
-      throw new Error(tokenData.error_description || tokenData.error || 'Failed to exchange token with eBay API.');
+      throw new Error(tokenData.error_description || 'Failed to exchange token with eBay API.');
     }
 
-    console.log('Token Exchange Successful!');
+    // 4. Fetch User Identity from eBay
+    console.log('Fetching eBay User Identity...');
+    const identityResponse = await fetch('https://api.ebay.com/commerce/identity/v1/user/', {
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`,
+        'Accept': 'application/json'
+      }
+    });
 
-    // Enterprise Architecture: Write token directly to the database via Service Role to completely bypass browser cookie issues
-    console.log('Writing credentials directly to database via Admin Client...');
-    
+    const identityData = await identityResponse.json();
+    if (!identityResponse.ok) {
+      throw new Error(identityData.error_description || 'Failed to fetch eBay identity.');
+    }
+
+    const ebayUserId = identityData.userId;
+    const ebayEmail = identityData.account?.email || `ebay_${ebayUserId}@syncsell.com`;
+    const ebayName = identityData.individualAccount?.firstName 
+      ? `${identityData.individualAccount.firstName} ${identityData.individualAccount.lastName}`
+      : (identityData.businessAccount?.businessName || ebayUserId);
+
+    console.log(`Resolved Identity: ${ebayEmail} (${ebayName})`);
+
     const supabaseAdmin = createAdminClient();
+    let supabaseUserId = '';
+
+    // 5. Create or Update Shadow Account using Admin API
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
-    // Calculate expiration
+    if (listError) {
+      throw new Error('Failed to query users via Admin API: ' + listError.message);
+    }
+
+    const existingUser = existingUsers.users.find(u => u.email === ebayEmail);
+
+    if (existingUser) {
+      console.log('User exists. Updating shadow password...');
+      supabaseUserId = existingUser.id;
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
+        password: shadowPass,
+        email_confirm: true
+      });
+      if (updateError) throw new Error('Failed to update shadow password: ' + updateError.message);
+    } else {
+      console.log('Creating new shadow account...');
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: ebayEmail,
+        password: shadowPass,
+        email_confirm: true,
+        user_metadata: { full_name: ebayName }
+      });
+      if (createError || !newUser.user) throw new Error('Failed to create shadow user: ' + (createError?.message || 'No user returned'));
+      supabaseUserId = newUser.user.id;
+      
+      // Seed public.users table
+      await supabaseAdmin.from('users').insert({
+        id: supabaseUserId,
+        email: ebayEmail,
+        full_name: ebayName
+      });
+    }
+
+    // 6. Sign in the User (Creates the secure session cookies)
+    console.log('Signing in shadow account...');
+    const supabaseClient = await createClient(); // The server client handles cookies
+    const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+      email: ebayEmail,
+      password: shadowPass
+    });
+
+    if (signInError) {
+      throw new Error('Failed to sign in shadow account: ' + signInError.message);
+    }
+
+    // 7. Save eBay Credentials
+    console.log('Saving store credentials...');
     const expiresIn = tokenData.expires_in || 7200;
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
 
-    // Bypass any missing ON CONFLICT constraints by using safe inserts and deletes
-    // Supabase builder doesn't have a .catch() method, so we just destructure the error and ignore it
-    const { error: userInsertError } = await supabaseAdmin.from('users').insert({
-      id: userId,
-      email: 'ebay_oauth_user@syncsell.com',
-      full_name: 'eBay Authenticated User'
+    await supabaseAdmin.from('store_credentials').delete().match({ user_id: supabaseUserId, platform: 'ebay' });
+    
+    const { error: dbError } = await supabaseAdmin.from('store_credentials').insert({
+      user_id: supabaseUserId,
+      platform: 'ebay',
+      store_url: 'ebay.com',
+      store_name: ebayName,
+      encrypted_access_token: encrypt(tokenData.access_token),
+      encrypted_refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
+      token_expires_at: expiresAt.toISOString(),
+      is_active: true
     });
 
-    if (userInsertError) {
-      console.log('Ignored user insert error (likely already exists):', userInsertError.message);
-    }
+    if (dbError) throw new Error('Failed to save credentials: ' + dbError.message);
 
-    // Clear old credentials
-    await supabaseAdmin.from('store_credentials').delete().match({ user_id: userId, platform: 'ebay' });
-
-    // Save new credentials
-    const { error: dbError } = await supabaseAdmin
-      .from('store_credentials')
-      .insert({
-        user_id: userId,
-        platform: 'ebay',
-        store_url: 'ebay.com',
-        store_name: 'My eBay Store',
-        encrypted_access_token: encrypt(tokenData.access_token),
-        encrypted_refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
-        token_expires_at: expiresAt.toISOString(),
-        is_active: true
-      });
-
-    if (dbError) {
-      console.error('Admin Database Error:', dbError);
-      throw new Error('Failed to save store credentials to database: ' + dbError.message);
-    }
-
-    console.log('Credentials saved successfully! Redirecting to Dashboard.');
-    
-    // Completely bypass the frontend handoff and go straight to success
-    return NextResponse.redirect(new URL('/dashboard?success=ebay_connected', appUrl));
+    // 8. Redirect to Dashboard & clean up temporary cookies
+    console.log('Success! Redirecting to dashboard.');
+    const response = NextResponse.redirect(new URL('/dashboard?success=ebay_connected', appUrl));
+    response.cookies.delete('syncsell_shadow_pass');
+    response.cookies.delete('syncsell_auth_state');
+    return response;
 
   } catch (err: any) {
-    // 5. Wrap everything in try/catch and log the full error
-    console.error('--- OAUTH CALLBACK EXCEPTION ---');
+    console.error('--- SHADOW AUTH CALLBACK EXCEPTION ---');
     console.error(err);
     
-    // Redirect with the exact, explicit error message so you can see it on the dashboard
-    return NextResponse.redirect(new URL(`/dashboard?error=${encodeURIComponent(err.message || 'Unknown Callback Error')}`, appUrl));
+    // Fallback: If anything fails, send them back with the exact error so we can debug
+    const response = NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(err.message || 'Unknown Shadow Auth Error')}`, appUrl));
+    response.cookies.delete('syncsell_shadow_pass');
+    response.cookies.delete('syncsell_auth_state');
+    return response;
   }
 }
